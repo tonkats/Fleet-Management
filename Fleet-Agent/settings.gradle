@@ -1,0 +1,3 @@
+rootProject.name = 'Fleet-Agent'
+include 'Fleet-API'
+project(':Fleet-API').projectDir = new File('../Fleet-API')
