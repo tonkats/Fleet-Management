@@ -9,6 +9,9 @@ var messageArea = document.querySelector('#messageArea');
 var fleetLog = document.querySelector('#fleetLog');
 var connectingElement = document.querySelector('.connecting');
 
+var addRouteButton = document.getElementById('addRouteButton');
+var removeRouteButton = document.getElementById('removeRouteButton');
+
 var stompClient = null;
 var username = null;
 
@@ -16,6 +19,11 @@ var colors = [
     '#2196F3', '#32c787', '#00BCD4', '#ff5652',
     '#ffc107', '#ff85af', '#FF9800', '#39bbb0'
 ];
+
+/* Needed variables */
+
+let selectedItem = null;
+let agents = null;
 
 function connect(event) {
     username = document.querySelector('#name').value.trim();
@@ -36,14 +44,24 @@ function connect(event) {
 function onConnected() {
     // Subscribe to the Public Topic
     stompClient.subscribe('/topic/public', onMessageReceived);
+    stompClient.subscribe('/topic/admin.newAgent', onAgentConnected);
+    stompClient.subscribe(`/user/${username}/queue/agentStates`, updateAgentsList);
 
-    // Tell your username to the server
+    /* Register the client at the server */
     stompClient.send("/app/agent.addUser",
         {},
         JSON.stringify({sender: username, type: 'JOIN'})
     )
 
+    /* Request the server to send a list of currently connected agents */
+    stompClient.send("/app/agent.getAgents",
+        {},
+        JSON.stringify({sender: username})
+    )
+
     connectingElement.classList.add('hidden');
+
+    setupAddRouteButton();
 }
 
 
@@ -105,6 +123,30 @@ function onMessageReceived(payload) {
     messageArea.scrollTop = messageArea.scrollHeight;
 }
 
+function onAgentConnected(payload) {
+    draw();
+    var message = JSON.parse(payload.body);
+
+    var messageElement = document.createElement('li');
+
+    messageElement.classList.add('event-message');
+
+
+    var textElement = document.createElement('p');
+    var messageText = document.createTextNode(message.id);
+    textElement.appendChild(messageText);
+
+    messageElement.appendChild(textElement);
+
+    fleetLog.appendChild(messageElement);
+    fleetLog.scrollTop = fleetLog.scrollHeight;
+}
+
+function updateAgentsList(payload) {
+    agents = JSON.parse(payload.body);
+    populateAgentList();
+}
+
 
 function getAvatarColor(messageSender) {
     var hash = 0;
@@ -128,7 +170,41 @@ function draw() {
     }
 }
 
+function populateAgentList() {
+    const listContainer = document.getElementById('listContainer');
+    for (let i = 0; i < agents.length; i++) {
+        const listItem = document.createElement('div');
+        listItem.classList.add('listItem');
+        listItem.textContent = agents[i].id;
+        listItem.onclick = function() {
+            selectListItem(this);
+        };
+        listContainer.appendChild(listItem);
+    }
+}
+
+function selectListItem(item) {
+    if (selectedItem) {
+        selectedItem.classList.remove('selected');
+    }
+    selectedItem = item;
+    selectedItem.classList.add('selected');
+}
+
+function setupAddRouteButton() {
+    addRouteButton.onclick = function () {
+        if (selectedItem) {
+            // Execute some code based on the selected item
+            alert('Button clicked with ' + selectedItem.textContent + ' selected.');
+            // Add your custom logic here
+        } else {
+            alert('Please select an item first.');
+        }
+    };
+}
+
 
 usernameForm.addEventListener('submit', connect, true)
 messageForm.addEventListener('submit', sendMessage, true)
-draw();
+
+//draw();

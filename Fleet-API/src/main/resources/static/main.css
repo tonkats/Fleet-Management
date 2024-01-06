@@ -135,7 +135,7 @@ button.accent {
     box-shadow: 0 1px 11px rgba(0, 0, 0, 0.27);
     margin-top: 30px;
     height: calc(100% - 60px);
-    max-height: 600px;
+    max-height: 300px;
     position: relative;
 }
 
@@ -305,4 +305,23 @@ button.accent {
     .fleet-log-header h2 {
         font-size: 1.1em;
     }
+}
+
+#listContainer {
+    border: 1px solid #ccc;
+    padding: 10px;
+}
+.listItem {
+    padding: 5px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+}
+.listItem:hover {
+    background-color: #f0f0f0;
+}
+.selected {
+    background-color: #add8e6; /* Light blue background for selected item */
+}
+.selected:hover {
+    background-color: #add8e6; /* Same as the selected background color */
 }
