@@ -31,7 +31,7 @@ public class MyStompSessionHandler extends StompSessionHandlerAdapter {
 
         FleetMessage fleetMessage = new FleetMessage();
         fleetMessage.setType(MessageType.JOIN);
-        fleetMessage.setSender("Java client");
+        fleetMessage.setSender(FleetClient.getAgent().getId().toString());
 
         session.send("/app/agent.addUser", fleetMessage);
         logger.info("Message sent to websocket server");

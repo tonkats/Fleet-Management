@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
-    <title>Spring Boot WebSocket Chat Application</title>
+    <title>Fleet management application</title>
     <link rel="stylesheet" href="/main.css" />
 </head>
 <body>
@@ -12,19 +12,20 @@
 
 <div id="username-page">
     <div class="username-page-container">
-        <h1 class="title">Type your user id to enter the chat</h1>
+        <h1 class="title">Type your user id</h1>
         <form id="usernameForm" name="usernameForm">
             <div class="form-group">
                 <input type="text" id="name" placeholder="Username" autocomplete="off" class="form-control" />
             </div>
             <div class="form-group">
-                <button type="submit" class="accent username-submit">Start Chatting</button>
+                <button type="submit" class="accent username-submit">Submit</button>
             </div>
         </form>
     </div>
 </div>
 
 <div id="management-page" class="hidden">
+
     <div class="console-container">
         <div class="console-header">
             <h2>Fleet management console</h2>
@@ -44,24 +45,25 @@
             </div>
         </form>
 
-        <!-- Scrollable List Container -->
-        <div id="listContainer" style="height: 200px; overflow-y: scroll;">
-            <!-- List items will be added here -->
-        </div>
 
-        <div id="agentDetails">
-            <!-- Agent details will be displayed here -->
-        </div>
+    <!-- Scrollable List Container -->
+    <div id="listContainer" style="height: 200px; overflow-y: scroll;">
+        <!-- List items will be added here -->
+    </div>
 
-        <div id="tripsContainer" style="height: 100px; overflow-y: scroll;">
-            <!-- List items will be added here -->
-        </div>
+    <div id="agentDetails">
+        <!-- Agent details will be displayed here -->
+    </div>
 
-        <input id="delayInput" type="number" min="0" max="9" maxlength="6" placeholder="Departure delay">
+    <div id="tripsContainer" style="height: 100px; overflow-y: scroll;">
+        <!-- List items will be added here -->
+    </div>
 
-        <button id="addRouteButton" class="primary">Add route</button>
+    <input id="delayInput" type="number" min="0" max="9" maxlength="6" placeholder="Departure delay">
 
-        <button id="removeRouteButton" class="primary">Remove route</button>
+    <button id="addRouteButton" class="primary">Add route</button>
+
+    <button id="removeRouteButton" class="primary">Remove route</button>
 
     </div>
 
@@ -69,6 +71,7 @@
     <div class="canvas-container">
         <canvas id="canvas" width="500" height="500" style="border:1px solid grey;"></canvas>
     </div>
+
 </div>
 
 

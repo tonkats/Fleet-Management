@@ -248,6 +248,7 @@ button.accent {
 }
 
 
+
 .connecting {
     padding-top: 5px;
     text-align: center;
@@ -316,26 +317,17 @@ button.accent {
     border: 1px solid #ccc;
     padding: 10px;
 }
-
-#tripsContainer {
-    border: 1px solid #ccc;
-    padding: 10px;
-}
-
 .listItem {
     padding: 5px;
     border-bottom: 1px solid #eee;
     cursor: pointer;
 }
-
 .listItem:hover {
     background-color: #f0f0f0;
 }
-
 .selected {
     background-color: #add8e6; /* Light blue background for selected item */
 }
-
 .selected:hover {
     background-color: #add8e6; /* Same as the selected background color */
 }
@@ -346,17 +338,14 @@ button.accent {
     padding: 10px;
     margin-top: 20px;
 }
-
 .listItem {
     padding: 5px;
     border-bottom: 1px solid #eee;
     cursor: pointer;
 }
-
 .listItem:hover {
     background-color: #f0f0f0;
 }
-
 .selected:hover {
     background-color: #add8e6;
 }
@@ -364,7 +353,6 @@ button.accent {
 .connected {
     color: green;
 }
-
 .disconnected {
     color: red;
 }

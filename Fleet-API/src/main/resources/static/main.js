@@ -3,8 +3,6 @@
 var usernamePage = document.querySelector('#username-page');
 var managementPage = document.querySelector('#management-page');
 var usernameForm = document.querySelector('#usernameForm');
-var messageForm = document.querySelector('#messageForm');
-var messageInput = document.querySelector('#message');
 var messageArea = document.querySelector('#messageArea');
 var fleetLog = document.querySelector('#fleetLog');
 var connectingElement = document.querySelector('.connecting');
@@ -86,21 +84,6 @@ function onError(error) {
     connectingElement.style.color = 'red';
 }
 
-
-function sendMessage(event) {
-    var messageContent = messageInput.value.trim();
-    if (messageContent && stompClient) {
-        var fleetMessage = {
-            sender: username,
-            content: messageInput.value,
-            type: 'TRIP'
-        };
-        stompClient.send("/app/agent.sendMessage", {}, JSON.stringify(fleetMessage));
-        messageInput.value = '';
-    }
-    event.preventDefault();
-}
-
 function sendTripCommand(agentId, route, delay, action) {
     var currentDate = new Date();
     var currentTimestamp = currentDate.getTime();
@@ -132,10 +115,10 @@ function onMessageReceived(payload) {
 
     if (message.type === 'JOIN') {
         messageElement.classList.add('event-message');
-        message.content = message.sender + ' joined!';
+        message.content = message.sender + ' connected.';
     } else if (message.type === 'LEAVE') {
         messageElement.classList.add('event-message');
-        message.content = message.sender + ' left!';
+        message.content = message.sender + ' disconnected.';
     } else {
         messageElement.classList.add('fleet-message');
 
@@ -419,5 +402,4 @@ function stopDrawing(evt) {
 initCanvas();
 setInterval(drawAgents, 100);
 usernameForm.addEventListener('submit', connect, true);
-messageForm.addEventListener('submit', sendMessage, true);
 
