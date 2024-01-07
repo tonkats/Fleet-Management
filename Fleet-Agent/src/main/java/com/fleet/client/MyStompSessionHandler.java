@@ -24,7 +24,7 @@ public class MyStompSessionHandler extends StompSessionHandlerAdapter {
         subscribeToMessageTopic("/topic/public", session);
         logger.info("Subscribed to /topic/public");
 
-        String commandTopic = "/user/" + FleetClient.agent.getId() + "/queue/commands";
+        String commandTopic = "/user/" + FleetClient.getAgent().getId() + "/queue/commands";
         subscribeToCommandTopic(commandTopic, session);
         logger.info("Subscribed to " + commandTopic);
 
@@ -38,11 +38,11 @@ public class MyStompSessionHandler extends StompSessionHandlerAdapter {
 
         /* AGENT */
 
-        session.send("/app/agent.addAgent", FleetClient.agent);
+        session.send("/app/agent.addAgent", FleetClient.getAgent());
 
         AgentLoop agentLoop = new AgentLoop(session);
         agentLoop.positionUpdated();
-        agentLoop.runLoop();
+        new Thread(agentLoop).start();
         //session.send("/app/agent.sendMessage", getSampleMessage());
         //logger.info("Message sent to websocket server");
     }
@@ -88,6 +88,8 @@ public class MyStompSessionHandler extends StompSessionHandlerAdapter {
                 } else if (command.getAction() == Action.REMOVE) {
                     removeTrip(command.getTrip());
                 }
+                session.send("/app/agent.updateAgent", FleetClient.getAgent());
+                logger.info("Sent agent update");
             }
 
             @Override
@@ -98,17 +100,21 @@ public class MyStompSessionHandler extends StompSessionHandlerAdapter {
     }
 
     private void removeTrip(Trip trip) {
-        if (!FleetClient.agent.getUpcomingTrips().remove(trip)) {
+        Agent agent = FleetClient.getAgent();
+        if (!agent.getUpcomingTrips().remove(trip)) {
             // Throw error, trip can't be removed because it doesn't exist.
         } else {
             logger.info("Trip removed: " + trip.toString());
         }
+        FleetClient.setAgent(agent);
     }
 
     private void addTrip(Trip trip) {
         /* TODO: Add time and position validation on current trips. */
-        FleetClient.agent.getUpcomingTrips().add(trip);
-        FleetClient.agent.getUpcomingTrips().sort((s1, s2) -> s1.getDepartureTime() - s2.getDepartureTime());
+        Agent agent = FleetClient.getAgent();
+        agent.getUpcomingTrips().add(trip);
+        agent.getUpcomingTrips().sort((s1, s2) -> s1.getDepartureTime() - s2.getDepartureTime());
+        FleetClient.setAgent(agent);
         logger.info("Trip added: " + trip.toString());
     }
 }

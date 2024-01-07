@@ -23,7 +23,21 @@ var colors = [
 /* Needed variables */
 
 let selectedItem = null;
+let selectedAgent = null;
+let selectedTrip = null;
 let agents = null;
+
+let pathPoints = [];
+const d = 50;
+
+/* Canvas drawing variables */
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let isDrawing = false;
+let lastX = 0;
+let lastY = 0;
+let currentX = null
+let currentY = null
 
 function connect(event) {
     username = document.querySelector('#name').value.trim();
@@ -63,6 +77,7 @@ function onConnected() {
     connectingElement.classList.add('hidden');
 
     setupAddRouteButton();
+    setupRemoveRouteButton();
 }
 
 
@@ -82,6 +97,29 @@ function sendMessage(event) {
         };
         stompClient.send("/app/agent.sendMessage", {}, JSON.stringify(fleetMessage));
         messageInput.value = '';
+    }
+    event.preventDefault();
+}
+
+function sendTripCommand(agentId, route, delay, action) {
+    var currentDate = new Date();
+    var currentTimestamp = currentDate.getTime();
+    var midnightToday = new Date(currentDate);
+    midnightToday.setHours(0, 0, 0, 0);
+    var midnightTimestamp = midnightToday.getTime();
+    var departureTime = Math.floor((currentTimestamp - midnightTimestamp) / 1000) + delay;
+
+    if (stompClient) {
+        var command = {
+            agentId: agentId,
+            action: action,
+            trip: {
+                route: route,
+                departureTime: departureTime
+            }
+        };
+        pathPoints = [];
+        stompClient.send("/app/command", {}, JSON.stringify(command));
     }
     event.preventDefault();
 }
@@ -125,7 +163,6 @@ function onMessageReceived(payload) {
 }
 
 function onAgentConnected(payload) {
-    draw();
     var agent = JSON.parse(payload.body);
     agents.push(agent);
     populateAgentList();
@@ -141,7 +178,7 @@ function onAgentConnected(payload) {
 
     messageElement.appendChild(textElement);
 
-    fleetLog.appendChild(messageElement);
+    fleetLog.appendChild(messageElement); // NULL
     fleetLog.scrollTop = fleetLog.scrollHeight;
 }
 
@@ -149,8 +186,8 @@ function updateAgent(payload) {
     let updatedAgent = JSON.parse(payload.body);
     agents.map(agent => {
         if (agent.id === updatedAgent.id) {
-            Object.keys(updatedAgent).forEach(key => {
-                if (agent.hasOwnProperty(key)) {
+            Object.keys(agent).forEach(key => {
+                if (updatedAgent.hasOwnProperty(key) && updatedAgent[key] !== null) {
                     agent[key] = updatedAgent[key];
                 }
             });
@@ -175,16 +212,46 @@ function getAvatarColor(messageSender) {
     return colors[index];
 }
 
-function draw() {
-    const canvas = document.getElementById("canvas");
-    if (canvas.getContext) {
-        const ctx = canvas.getContext("2d");
+function initCanvas() {
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mouseout', stopDrawing);
+}
 
+function drawPath() {
+    if (canvas.getContext && pathPoints.length > 0) {
         ctx.beginPath();
-        ctx.moveTo(75, 50);
-        ctx.lineTo(100, 75);
-        ctx.lineTo(100, 25);
-        ctx.fill();
+        // Draw line
+
+        ctx.moveTo(pathPoints[0].x, pathPoints[0].y); // Start from the first point
+        for (let i = 1; i < pathPoints.length; i++) {
+            ctx.lineTo(pathPoints[i].x, pathPoints[i].y); // Draw line to the next point
+        }
+        if (isDrawing && currentX !== null && currentY !== null) {
+            ctx.lineTo(currentX, currentY);
+        }
+        ctx.stroke(); // Render the lines on the canvas
+    }
+}
+
+function drawAgents() {
+    if (canvas.getContext) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        drawPath();
+        if (agents !== null) {
+            agents.forEach(agent => {
+                // Set a larger radius for the agent that is selected
+                const radius = (selectedAgent !== null && agent.id === selectedAgent.id) ? 5 : 3;
+                const color = (agent.connectionStatus === 'CONNECTED' ? 'green' : 'red')
+                // Draw each agent position
+                ctx.beginPath();
+                ctx.fillStyle = color;
+                ctx.arc(agent.currentLocation.x, agent.currentLocation.y, radius, 0, Math.PI * 2); // Drawing a small circle for each position
+                ctx.fill();
+            });
+        }
     }
 }
 
@@ -200,6 +267,7 @@ function populateAgentList() {
 
         agentItem.onclick = function () {
             selectListItem(this)
+            selectedAgent = agent
             displayAgentDetails(agent);
         };
         listContainer.appendChild(agentItem);
@@ -215,28 +283,141 @@ function selectListItem(item) {
 }
 
 function displayAgentDetails(agent) {
+    if (agent.id !== selectedAgent.id) return;
     const detailsContainer = document.getElementById('agentDetails');
     detailsContainer.innerHTML = `
         <strong>Connection Status:</strong> ${agent.connectionStatus}<br>
         <strong>Speed:</strong> ${agent.speed}<br>
         <strong>Current Location:</strong> ${agent.currentLocation.x} ${agent.currentLocation.y}
     `;
+    populateTripsList()
+}
+
+function populateTripsList() {
+    const tripsContainer = document.getElementById('tripsContainer');
+    tripsContainer.innerHTML = '';
+    selectedAgent.upcomingTrips.forEach(trip => {
+        const tripItem = document.createElement('div');
+        tripItem.classList.add('listItem');
+
+        let tripLength = 0;
+        // Running the for loop
+        for (let i = 1; i < trip.route.length; i++) {
+            tripLength += distanceBetween(trip.route[0].x, trip.route[1].x, trip.route[0].y, trip.route[1].y);
+        }
+        // Display ID and Connection Status
+        tripItem.innerHTML = `<span> Startposition: ${trip.route[0].x}, ${trip.route[0].y}</span>
+                                <span> Endposition: ${trip.route[trip.route.length-1].x}, ${trip.route[trip.route.length-1].y}</span>
+                                <span> Route points: ${trip.route.length}</span>
+                                <span> Trip length: ${tripLength}</span>`;
+
+        tripItem.onclick = function () {
+            selectListItem(this)
+            selectedTrip = trip;
+            removeRouteButton.removeAttribute("disabled");
+        };
+        tripsContainer.appendChild(tripItem);
+    });
+}
+
+function distanceBetween(x1, x2, y1, y2) {
+    return Math.sqrt((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2))
+}
+
+function secondsUntilMidnight() {
+    var now = new Date();
+    var midnight = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate() + 1, // the next day
+        0, 0, 0, 0 // set to midnight
+    );
+    var difference = midnight - now; // difference in milliseconds
+    return Math.floor(difference / 1000); // convert to seconds
 }
 
 function setupAddRouteButton() {
     addRouteButton.onclick = function () {
         if (selectedItem) {
-            // Execute some code based on the selected item
-            alert('Button clicked with ' + selectedItem.textContent + ' selected.');
-            // Add your custom logic here
+            // TODO Add log to console
+            let inputValue = parseInt(document.getElementById("delayInput").value);
+            if (isNaN(inputValue)) {
+                inputValue = 1;
+            } else {
+                inputValue = Math.min(inputValue, secondsUntilMidnight());
+            }
+            sendTripCommand(selectedAgent.id, pathPoints, inputValue, 'ADD');
+            populateTripsList();
+            addRouteButton.setAttribute("disabled","disabled");
         } else {
             alert('Please select an item first.');
         }
     };
 }
 
+function setupRemoveRouteButton() {
+    removeRouteButton.onclick = function () {
+        if (selectedItem) {
+            // TODO Add log to console
+            sendTripCommand(selectedAgent.id, selectedTrip.route, 0, 'REMOVE');
+        } else {
+            alert('Please select an item first.');
+        }
+    };
+    removeRouteButton.setAttribute("disabled","disabled");
+}
 
-usernameForm.addEventListener('submit', connect, true)
-messageForm.addEventListener('submit', sendMessage, true)
+/* Canvas drawing functions */
 
-//draw();
+function getMousePos(canvas, evt) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+        x: evt.clientX - rect.left,
+        y: evt.clientY - rect.top
+    };
+}
+
+function startDrawing(evt) {
+    isDrawing = true;
+    const {x, y} = getMousePos(canvas, evt);
+    lastX = x;
+    lastY = y;
+    pathPoints = [{x, y}];
+}
+
+function draw(evt) {
+    if (!isDrawing) return;
+    const {x, y} = getMousePos(canvas, evt);
+    currentX = x;
+    currentY = y;
+
+    // Check distance
+    if (Math.hypot(x - lastX, y - lastY) >= d) {
+        lastX = x;
+        lastY = y;
+        pathPoints.push({x, y});
+    }
+}
+
+function stopDrawing(evt) {
+    const {x, y} = getMousePos(canvas, evt);
+    if (isDrawing && pathPoints.length > 1) {
+        pathPoints.push({x, y});
+    }
+    currentX = null;
+    currentY = null;
+    isDrawing = false;
+    console.log("Drawn Points:", pathPoints); // Log the points
+
+    if (pathPoints.length > 1 && selectedAgent !== null) {
+        addRouteButton.removeAttribute('disabled');
+    } else {
+        addRouteButton.setAttribute("disabled","disabled");
+    }
+}
+
+initCanvas();
+setInterval(drawAgents, 100);
+usernameForm.addEventListener('submit', connect, true);
+messageForm.addEventListener('submit', sendMessage, true);
+

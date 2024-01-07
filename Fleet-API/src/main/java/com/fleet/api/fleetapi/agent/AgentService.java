@@ -27,7 +27,7 @@ public class AgentService {
 
     public void agentDisconnected(Agent agent) {
         knownAgents.stream()
-                .filter(knownAgent -> knownAgent.getId() == agent.getId())
+                .filter(knownAgent -> knownAgent.getId().equals(agent.getId()))
                 .forEach(knownAgent -> knownAgent.setConnectionStatus(ConnectionStatus.DISCONNECTED));
     }
 }

@@ -9,14 +9,11 @@ import org.springframework.messaging.simp.stomp.StompSession;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 
-public class AgentLoop {
+public class AgentLoop implements Runnable {
 
-    private final float distanceUpdateResolution = 0.2f;
-    private final float distanceResolution = 0.001f;
-    private final float timeMultiplier = 100.0f;
-    private final float moveDistance = (float) FleetClient.agent.getSpeed() / 1000;
+    private final float distanceUpdateResolution = 0.5f;
+    private float moveDistance = (float) FleetClient.getAgent().getSpeed() / 10;
     private final static Coordinate lastUpdatedPosition = new Coordinate();
     private StompSession session;
 
@@ -26,52 +23,80 @@ public class AgentLoop {
         this.session = session;
     }
 
-    public void runLoop() {
+    public void run() {
+        while (true) {
+            while (FleetClient.getAgent().getUpcomingTrips().isEmpty()) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    System.err.println("Thread Interrupted");
+                }
+            }
 
-        while (FleetClient.agent.getUpcomingTrips().isEmpty()) {
+            Trip currentTrip = FleetClient.getAgent().getUpcomingTrips().get(0);
+            Trip currentTripCopy = new Trip(currentTrip);
             try {
-                Thread.sleep(1000);
+                LocalDateTime date = LocalDateTime.now();
+                long currentTimeSeconds = Duration.between(date.withSecond(0).withMinute(0).withHour(0), date).getSeconds();
+                long timeToWait = currentTrip.getDepartureTime() - currentTimeSeconds;
+                while (timeToWait > 0) {
+                    Thread.sleep(1000);
+                    if (FleetClient.getAgent().getUpcomingTrips().isEmpty()) break;
+                    currentTrip = FleetClient.getAgent().getUpcomingTrips().get(0);
+                    if (!currentTrip.equals(currentTripCopy)) break;
+                    date = LocalDateTime.now();
+                    currentTimeSeconds = Duration.between(date.withSecond(0).withMinute(0).withHour(0), date).getSeconds();
+                    timeToWait = currentTrip.getDepartureTime() - currentTimeSeconds;
+                }
+                if (FleetClient.getAgent().getUpcomingTrips().isEmpty()) continue;
+                while (!currentTrip.getRoute().isEmpty() && currentTripCopy.equals(FleetClient.getAgent().getUpcomingTrips().get(0))) {
+                    Coordinate nextPos = currentTrip.getRoute().remove(0);
+                    moveToPoint(nextPos);
+                    if (!FleetClient.getAgent().getUpcomingTrips().get(0).equals(currentTripCopy)) break;
+                }
+                updateTripFinished(currentTripCopy);
             } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                System.err.println("Thread Interrupted");
+                throw new RuntimeException(e);
             }
-        }
-        Trip currentTrip = FleetClient.agent.getUpcomingTrips().remove(0);
-        try {
-            LocalDateTime date = LocalDateTime.now();
-            long currentTimeSeconds = Duration.between(date.withSecond(0).withMinute(0).withHour(0), date).getSeconds();
-            long timeToWait = currentTrip.getDepartureTime() - currentTimeSeconds;
-            if (timeToWait > 0) {
-                Thread.sleep(timeToWait * 1000);
-            }
-            while (!currentTrip.getRoute().isEmpty()) {
-                Coordinate nextPos = currentTrip.getRoute().remove(0);
-                moveToPoint(nextPos);
-            }
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
         }
     }
 
     private void moveToPoint(Coordinate c) throws InterruptedException {
-        while (FleetClient.agent.getCurrentLocation().distance(c) > distanceResolution) {
-            FleetClient.agent.getCurrentLocation().moveTowards(c, moveDistance);
-            Thread.sleep((long) (1000.0f / timeMultiplier));
-            if (lastUpdatedPosition.distance(FleetClient.agent.getCurrentLocation()) > distanceUpdateResolution) {
-                // TODO: Only send the position changes to save bandwidth.
-                updateAgentState(session, FleetClient.agent);
+        Agent agent = FleetClient.getAgent();
+        while (agent.getCurrentLocation().distance(c) > 0.001f) {
+            agent.getCurrentLocation().moveTowards(c, moveDistance);
+            Thread.sleep((long) (25.0f));
+            if (lastUpdatedPosition.distance(agent.getCurrentLocation()) > distanceUpdateResolution) {
+                updateAgentPosition(session, agent.getCurrentLocation());
             }
         }
+        updateAgentPosition(session, agent.getCurrentLocation());
     }
 
     public void positionUpdated() {
-        Coordinate agentLocation = FleetClient.agent.getCurrentLocation();
+        Coordinate agentLocation = FleetClient.getAgent().getCurrentLocation();
         lastUpdatedPosition.setX(agentLocation.getX());
         lastUpdatedPosition.setY(agentLocation.getY());
     }
 
-    public void updateAgentState(StompSession session, Agent agent) {
+    private void updateAgentPosition(StompSession session, Coordinate position) {
+        // TODO: Only send the position changes to save bandwidth.
+        lastUpdatedPosition.setX(position.getX());
+        lastUpdatedPosition.setY(position.getY());
+        Agent agent = FleetClient.getAgent();
+        agent.setCurrentLocation(position);
+        FleetClient.setAgent(agent);
         session.send("/app/agent.updateAgent", agent);
-        logger.info("Sent agent update");
+        //logger.info("Sent agent update");
+    }
+
+    private void updateTripFinished(Trip trip) {
+        Agent agent = FleetClient.getAgent();
+        if (agent.getUpcomingTrips().get(0).equals(trip)) {
+            agent.getUpcomingTrips().remove(0);
+            FleetClient.setAgent(agent);
+            session.send("/app/agent.updateAgent", agent);
+        }
     }
 }

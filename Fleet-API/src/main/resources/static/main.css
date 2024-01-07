@@ -4,7 +4,7 @@
     box-sizing: border-box;
 }
 
-html,body {
+html, body {
     height: 100%;
     overflow: hidden;
 }
@@ -83,6 +83,12 @@ button.default {
 
 button.primary {
     background-color: #6db33f;
+    box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.12);
+    color: #fff;
+}
+
+button.primary:disabled {
+    background-color: rgba(109, 179, 63, 0.5);
     box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.12);
     color: #fff;
 }
@@ -242,7 +248,6 @@ button.accent {
 }
 
 
-
 .connecting {
     padding-top: 5px;
     text-align: center;
@@ -311,17 +316,26 @@ button.accent {
     border: 1px solid #ccc;
     padding: 10px;
 }
+
+#tripsContainer {
+    border: 1px solid #ccc;
+    padding: 10px;
+}
+
 .listItem {
     padding: 5px;
     border-bottom: 1px solid #eee;
     cursor: pointer;
 }
+
 .listItem:hover {
     background-color: #f0f0f0;
 }
+
 .selected {
     background-color: #add8e6; /* Light blue background for selected item */
 }
+
 .selected:hover {
     background-color: #add8e6; /* Same as the selected background color */
 }
@@ -332,14 +346,17 @@ button.accent {
     padding: 10px;
     margin-top: 20px;
 }
+
 .listItem {
     padding: 5px;
     border-bottom: 1px solid #eee;
     cursor: pointer;
 }
+
 .listItem:hover {
     background-color: #f0f0f0;
 }
+
 .selected:hover {
     background-color: #add8e6;
 }
@@ -347,6 +364,19 @@ button.accent {
 .connected {
     color: green;
 }
+
 .disconnected {
     color: red;
 }
+
+input[type="number"] {
+    width: 150px; /* Width of the input field */
+    padding: 8px; /* Padding inside the input field */
+    border: 1px solid #ccc; /* Border around the input field */
+    border-radius: 4px; /* Rounded corners */
+    font-size: 16px; /* Font size */
+}
+input[type="number"]::placeholder {
+    color: #999; /* Placeholder text color */
+}
+
