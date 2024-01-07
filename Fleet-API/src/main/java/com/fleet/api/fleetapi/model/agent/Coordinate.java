@@ -3,6 +3,7 @@ package com.fleet.api.fleetapi.model.agent;
 import lombok.Data;
 
 import java.util.Objects;
+import java.util.Vector;
 
 @Data
 public class Coordinate {
@@ -23,5 +24,20 @@ public class Coordinate {
     @Override
     public int hashCode() {
         return Objects.hash(x, y);
+    }
+
+    public float distance(Coordinate c) {
+        float distX = c.x - x;
+        float distY = c.y - y;
+        return (float) Math.sqrt(distX * distX + distY * distY);
+    }
+
+    public void moveTowards(Coordinate c, float dist) {
+        float dX = c.x - x;
+        float dY = c.x - x;
+        float magnitude = (float) Math.sqrt(dX * dX + dY * dY);
+
+        this.x += dX / magnitude * dist;
+        this.y += dY / magnitude * dist;
     }
 }

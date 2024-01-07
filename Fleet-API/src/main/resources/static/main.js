@@ -1,7 +1,7 @@
 'use strict';
 
 var usernamePage = document.querySelector('#username-page');
-var chatPage = document.querySelector('#chat-page');
+var managementPage = document.querySelector('#management-page');
 var usernameForm = document.querySelector('#usernameForm');
 var messageForm = document.querySelector('#messageForm');
 var messageInput = document.querySelector('#message');
@@ -30,7 +30,7 @@ function connect(event) {
 
     if (username) {
         usernamePage.classList.add('hidden');
-        chatPage.classList.remove('hidden');
+        managementPage.classList.remove('hidden');
 
         var socket = new SockJS('/ws');
         stompClient = Stomp.over(socket);
@@ -45,6 +45,7 @@ function onConnected() {
     // Subscribe to the Public Topic
     stompClient.subscribe('/topic/public', onMessageReceived);
     stompClient.subscribe('/topic/admin.newAgent', onAgentConnected);
+    stompClient.subscribe('/topic/admin.updateAgent', updateAgent);
     stompClient.subscribe(`/user/${username}/queue/agentStates`, updateAgentsList);
 
     /* Register the client at the server */
@@ -125,7 +126,9 @@ function onMessageReceived(payload) {
 
 function onAgentConnected(payload) {
     draw();
-    var message = JSON.parse(payload.body);
+    var agent = JSON.parse(payload.body);
+    agents.push(agent);
+    populateAgentList();
 
     var messageElement = document.createElement('li');
 
@@ -133,13 +136,28 @@ function onAgentConnected(payload) {
 
 
     var textElement = document.createElement('p');
-    var messageText = document.createTextNode(message.id);
+    var messageText = document.createTextNode(agent.id);
     textElement.appendChild(messageText);
 
     messageElement.appendChild(textElement);
 
     fleetLog.appendChild(messageElement);
     fleetLog.scrollTop = fleetLog.scrollHeight;
+}
+
+function updateAgent(payload) {
+    let updatedAgent = JSON.parse(payload.body);
+    agents.map(agent => {
+        if (agent.id === updatedAgent.id) {
+            Object.keys(updatedAgent).forEach(key => {
+                if (agent.hasOwnProperty(key)) {
+                    agent[key] = updatedAgent[key];
+                }
+            });
+            displayAgentDetails(agent);
+        }
+        return agent;
+    });
 }
 
 function updateAgentsList(payload) {
@@ -172,15 +190,20 @@ function draw() {
 
 function populateAgentList() {
     const listContainer = document.getElementById('listContainer');
-    for (let i = 0; i < agents.length; i++) {
-        const listItem = document.createElement('div');
-        listItem.classList.add('listItem');
-        listItem.textContent = agents[i].id;
-        listItem.onclick = function() {
-            selectListItem(this);
+    listContainer.innerHTML = '';
+    agents.forEach(agent => {
+        const agentItem = document.createElement('div');
+        agentItem.classList.add('listItem');
+
+        // Display ID and Connection Status
+        agentItem.innerHTML = `<span>${agent.id}</span> <span class="${agent.connectionStatus === 'CONNECTED' ? 'connected' : 'disconnected'}" style="float:right">${agent.connectionStatus}</span>`;
+
+        agentItem.onclick = function () {
+            selectListItem(this)
+            displayAgentDetails(agent);
         };
-        listContainer.appendChild(listItem);
-    }
+        listContainer.appendChild(agentItem);
+    });
 }
 
 function selectListItem(item) {
@@ -189,6 +212,15 @@ function selectListItem(item) {
     }
     selectedItem = item;
     selectedItem.classList.add('selected');
+}
+
+function displayAgentDetails(agent) {
+    const detailsContainer = document.getElementById('agentDetails');
+    detailsContainer.innerHTML = `
+        <strong>Connection Status:</strong> ${agent.connectionStatus}<br>
+        <strong>Speed:</strong> ${agent.speed}<br>
+        <strong>Current Location:</strong> ${agent.currentLocation.x} ${agent.currentLocation.y}
+    `;
 }
 
 function setupAddRouteButton() {

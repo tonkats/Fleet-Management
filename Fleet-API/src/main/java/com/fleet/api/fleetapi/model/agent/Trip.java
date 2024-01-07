@@ -9,7 +9,7 @@ import java.util.Objects;
 @Data
 public class Trip {
     private List<Coordinate> route;
-    private LocalDateTime departureTime;
+    private int departureTime;  // Current clock time in seconds
 
     @Override
     public boolean equals(Object obj) {
@@ -20,11 +20,11 @@ public class Trip {
             return false;
         }
         Boolean sameRoute = route.equals(other.route);
-        Boolean sameTime = departureTime.equals(other.departureTime);
+        Boolean sameTime = departureTime == other.departureTime;
         return sameRoute && sameTime;
     }
     @Override
     public int hashCode() {
-        return Objects.hash(route.toString(), departureTime.toString());
+        return Objects.hash(route.toString(), departureTime);
     }
 }

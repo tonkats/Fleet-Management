@@ -122,12 +122,12 @@ button.accent {
 }
 
 
-#chat-page {
+#management-page {
     position: relative;
     height: 100%;
 }
 
-.chat-container {
+.console-container {
     max-width: 700px;
     margin-left: auto;
     margin-right: auto;
@@ -139,7 +139,7 @@ button.accent {
     position: relative;
 }
 
-#chat-page ul {
+#management-page ul {
     list-style-type: none;
     background-color: #FFF;
     margin: 0;
@@ -149,39 +149,39 @@ button.accent {
     height: calc(100% - 150px);
 }
 
-#chat-page #messageForm {
+#management-page #messageForm {
     padding: 20px;
 }
 
-#chat-page ul li {
+#management-page ul li {
     line-height: 1.5rem;
     padding: 10px 20px;
     margin: 0;
     border-bottom: 1px solid #f4f4f4;
 }
 
-#chat-page ul li p {
+#management-page ul li p {
     margin: 0;
 }
 
-#chat-page .event-message {
+#management-page .event-message {
     width: 100%;
     text-align: center;
     clear: both;
 }
 
-#chat-page .event-message p {
+#management-page .event-message p {
     color: #777;
     font-size: 14px;
     word-wrap: break-word;
 }
 
-#chat-page .chat-message {
+#management-page .chat-message {
     padding-left: 68px;
     position: relative;
 }
 
-#chat-page .chat-message i {
+#management-page .chat-message i {
     position: absolute;
     width: 42px;
     height: 42px;
@@ -198,12 +198,12 @@ button.accent {
     text-transform: uppercase;
 }
 
-#chat-page .chat-message span {
+#management-page .chat-message span {
     color: #333;
     font-weight: 600;
 }
 
-#chat-page .chat-message p {
+#management-page .chat-message p {
     color: #43464b;
 }
 
@@ -219,13 +219,13 @@ button.accent {
     margin-left: 5px;
 }
 
-.chat-header {
+.console-header {
     text-align: center;
     padding: 15px;
     border-bottom: 1px solid #ececec;
 }
 
-.chat-header h2 {
+.console-header h2 {
     margin: 0;
     font-weight: 500;
 }
@@ -255,7 +255,7 @@ button.accent {
 
 @media screen and (max-width: 730px) {
 
-    .chat-container {
+    .console-container {
         margin-left: 10px;
         margin-right: 10px;
         margin-top: 10px;
@@ -263,7 +263,7 @@ button.accent {
 }
 
 @media screen and (max-width: 480px) {
-    .chat-container {
+    .console-container {
         height: calc(100% - 30px);
     }
 
@@ -274,7 +274,7 @@ button.accent {
         padding: 25px;
     }
 
-    #chat-page ul {
+    #management-page ul {
         height: calc(100% - 120px);
     }
 
@@ -286,7 +286,7 @@ button.accent {
         width: calc(100% - 70px);
     }
 
-    .chat-header {
+    .console-header {
         padding: 10px;
     }
 
@@ -298,7 +298,7 @@ button.accent {
         top: 60px;
     }
 
-    .chat-header h2 {
+    .console-header h2 {
         font-size: 1.1em;
     }
 
@@ -324,4 +324,29 @@ button.accent {
 }
 .selected:hover {
     background-color: #add8e6; /* Same as the selected background color */
+}
+
+
+#agentDetails {
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin-top: 20px;
+}
+.listItem {
+    padding: 5px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+}
+.listItem:hover {
+    background-color: #f0f0f0;
+}
+.selected:hover {
+    background-color: #add8e6;
+}
+
+.connected {
+    color: green;
+}
+.disconnected {
+    color: red;
 }

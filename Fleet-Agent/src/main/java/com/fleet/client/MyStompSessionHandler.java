@@ -4,6 +4,7 @@ import com.fleet.api.fleetapi.commands.Action;
 import com.fleet.api.fleetapi.commands.Command;
 import com.fleet.api.fleetapi.model.FleetMessage;
 import com.fleet.api.fleetapi.model.MessageType;
+import com.fleet.api.fleetapi.model.agent.Agent;
 import com.fleet.api.fleetapi.model.agent.Trip;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -23,8 +24,9 @@ public class MyStompSessionHandler extends StompSessionHandlerAdapter {
         subscribeToMessageTopic("/topic/public", session);
         logger.info("Subscribed to /topic/public");
 
-        subscribeToCommandTopic("/queue/commands", session);
-        logger.info("Subscribed to /queue/commands");
+        String commandTopic = "/user/" + FleetClient.agent.getId() + "/queue/commands";
+        subscribeToCommandTopic(commandTopic, session);
+        logger.info("Subscribed to " + commandTopic);
 
 
         FleetMessage fleetMessage = new FleetMessage();
@@ -37,11 +39,13 @@ public class MyStompSessionHandler extends StompSessionHandlerAdapter {
         /* AGENT */
 
         session.send("/app/agent.addAgent", FleetClient.agent);
+
+        AgentLoop agentLoop = new AgentLoop(session);
+        agentLoop.positionUpdated();
+        agentLoop.runLoop();
         //session.send("/app/agent.sendMessage", getSampleMessage());
         //logger.info("Message sent to websocket server");
     }
-
-
 
     private void subscribeToMessageTopic(String topic, StompSession session) {
         session.subscribe(topic, new StompSessionHandlerAdapter() {
@@ -80,9 +84,9 @@ public class MyStompSessionHandler extends StompSessionHandlerAdapter {
                 logger.info("Received command: " + command);
                 /* If trip isn't already scheduled, add it. Otherwise, remove it */
                 if (command.getAction() == Action.ADD) {
-                    removeTrip(command.getTrip());
-                } else if (command.getAction() == Action.REMOVE) {
                     addTrip(command.getTrip());
+                } else if (command.getAction() == Action.REMOVE) {
+                    removeTrip(command.getTrip());
                 }
             }
 
@@ -93,7 +97,7 @@ public class MyStompSessionHandler extends StompSessionHandlerAdapter {
         });
     }
 
-    void removeTrip(Trip trip) {
+    private void removeTrip(Trip trip) {
         if (!FleetClient.agent.getUpcomingTrips().remove(trip)) {
             // Throw error, trip can't be removed because it doesn't exist.
         } else {
@@ -101,9 +105,10 @@ public class MyStompSessionHandler extends StompSessionHandlerAdapter {
         }
     }
 
-    void addTrip(Trip trip) {
+    private void addTrip(Trip trip) {
         /* TODO: Add time and position validation on current trips. */
         FleetClient.agent.getUpcomingTrips().add(trip);
+        FleetClient.agent.getUpcomingTrips().sort((s1, s2) -> s1.getDepartureTime() - s2.getDepartureTime());
         logger.info("Trip added: " + trip.toString());
     }
 }

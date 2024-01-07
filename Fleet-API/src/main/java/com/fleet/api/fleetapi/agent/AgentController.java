@@ -57,11 +57,17 @@ public class AgentController {
     }
 
     @MessageMapping("/agent.getAgents")
-    public void processCommand(@Payload FleetMessage message) {
+    public void getAgents(@Payload FleetMessage message) {
         log.info("Sending list of agents to user: {}", message.getSender());
         messagingTemplate.convertAndSendToUser(
                 message.getSender(), "/queue/agentStates",
                 agentService.getKnownAgents()
         );
+    }
+
+    @MessageMapping("/agent.updateAgent")
+    @SendTo("/topic/admin.updateAgent")
+    public Agent updateAgent(@Payload Agent agent) {
+        return agent;
     }
 }
