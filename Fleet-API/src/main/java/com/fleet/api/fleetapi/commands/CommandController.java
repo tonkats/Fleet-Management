@@ -14,7 +14,7 @@ public class CommandController {
 
     @MessageMapping("/command")
     public void processCommand(@Payload Command command) {
-        messagingTemplate.convertAndSendToUser(
+            messagingTemplate.convertAndSendToUser(
                 command.getAgentId().toString(), "/queue/commands",
                 command
         );
